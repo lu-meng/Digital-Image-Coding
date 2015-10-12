@@ -1,0 +1,1528 @@
+% (a) Image Preparation:
+% load images
+outdoor=imread('outdoor.JPG');
+indoor=imread('indoor.JPG');
+portrait=imread('portrait.JPG');
+
+% M=[0.299 0.587 0.114;-0.169 -0.331 0.5; 0.5 -0.419 -0.081];
+% 
+%  indoor=im2double(indoor);
+%  outdoor=im2double(outdoor);
+%  portrait=im2double(portrait);
+% 
+% for i=1:size(indoor,1)
+%     for j=1:size(indoor,2)
+%         I(i,j,:)=M*indoor(i,j,:);
+%         j=j+1;
+%     end
+%     i=i+1;
+% end
+
+
+
+% convert to gray scale
+O=rgb2gray(outdoor);
+I=rgb2gray(indoor);
+P=rgb2gray(portrait);
+
+figure(1);
+imshow(O);
+figure(2);
+imshow(I);
+figure(3);
+imshow(P);
+
+
+% subsample and crop
+O_sub=imresize(O,0.5);
+I_sub=imresize(I,0.5);
+P_sub=imresize(P,0.5);
+
+o_sub=O_sub(305:1328,101:1124);
+i_sub=I_sub(101:1124,305:1328);
+p_sub=P_sub(305:1328,101:1124);
+
+
+figure(4);
+imshow(o_sub);
+figure(5);
+imshow(i_sub);
+figure(6);
+imshow(p_sub);
+
+
+% (b) Image Encoding:
+% DCT
+for i=1:128
+    for j=1:128
+        o_dct(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=dct2(o_sub(8*(i-1)+1:8*i,8*(j-1)+1:8*j));
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        i_dct(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=dct2(i_sub(8*(i-1)+1:8*i,8*(j-1)+1:8*j));
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        p_dct(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=dct2(p_sub(8*(i-1)+1:8*i,8*(j-1)+1:8*j));
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+% quantization
+% Method 1: standard JPEG quantization table
+Q=[16 11 10 16 24 40 51 61;
+   12 12 14 19 26 58 60 55;
+   14 13 16 24 40 57 69 56;
+   14 17 22 29 51 87 80 62;
+   18 22 37 56 68 109 103 77;
+   24 35 55 64 81 104 113 92;
+   49 64 78 87 103 121 120 101;
+   72 92 95 98 112 100 103 99];
+for i=1:128
+    for j=1:128
+        o_qua1(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=round(o_dct(8*(i-1)+1:8*i,8*(j-1)+1:8*j)./Q);
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        i_qua1(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=round(i_dct(8*(i-1)+1:8*i,8*(j-1)+1:8*j)./Q);
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        p_qua1(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=round(p_dct(8*(i-1)+1:8*i,8*(j-1)+1:8*j)./Q);
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+
+for i=1:128
+    for j=1:128
+        o_idct1(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=idct2(o_qua1(8*(i-1)+1:8*i,8*(j-1)+1:8*j).*Q);
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        i_idct1(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=idct2(i_qua1(8*(i-1)+1:8*i,8*(j-1)+1:8*j).*Q);
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        p_idct1(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=idct2(p_qua1(8*(i-1)+1:8*i,8*(j-1)+1:8*j).*Q);
+        j=j+1;
+    end
+    i=i+1;
+end
+
+ 
+figure(7);
+imshow(uint8(o_idct1));
+figure(8);
+imshow(uint8(i_idct1));
+figure(9);
+imshow(uint8(p_idct1));
+
+
+
+
+
+
+
+
+
+% Method 2: 4 times of the default quantization matrix
+QQ=4*Q;
+for i=1:128
+    for j=1:128
+        o_qua2(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=round(o_dct(8*(i-1)+1:8*i,8*(j-1)+1:8*j)./QQ);
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        i_qua2(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=round(i_dct(8*(i-1)+1:8*i,8*(j-1)+1:8*j)./QQ);
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        p_qua2(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=round(p_dct(8*(i-1)+1:8*i,8*(j-1)+1:8*j)./QQ);
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+
+for i=1:128
+    for j=1:128
+        o_idct2(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=idct2(o_qua2(8*(i-1)+1:8*i,8*(j-1)+1:8*j).*QQ);
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        i_idct2(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=idct2(i_qua2(8*(i-1)+1:8*i,8*(j-1)+1:8*j).*QQ);
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        p_idct2(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=idct2(p_qua2(8*(i-1)+1:8*i,8*(j-1)+1:8*j).*QQ);
+        j=j+1;
+    end
+    i=i+1;
+end
+
+ 
+figure(10);
+imshow(uint8(o_idct2));
+figure(11);
+imshow(uint8(i_idct2));
+figure(12);
+imshow(uint8(p_idct2));
+
+
+
+
+
+
+
+
+% Method 3: 10 times of the default quantization matrix
+QQQ=10*Q;
+for i=1:128
+    for j=1:128
+        o_qua3(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=round(o_dct(8*(i-1)+1:8*i,8*(j-1)+1:8*j)./QQQ);
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        i_qua3(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=round(i_dct(8*(i-1)+1:8*i,8*(j-1)+1:8*j)./QQQ);
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        p_qua3(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=round(p_dct(8*(i-1)+1:8*i,8*(j-1)+1:8*j)./QQQ);
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+
+for i=1:128
+    for j=1:128
+        o_idct3(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=idct2(o_qua3(8*(i-1)+1:8*i,8*(j-1)+1:8*j).*QQQ);
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        i_idct3(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=idct2(i_qua3(8*(i-1)+1:8*i,8*(j-1)+1:8*j).*QQQ);
+        j=j+1;
+    end
+    i=i+1;
+end
+for i=1:128
+    for j=1:128
+        p_idct3(8*(i-1)+1:8*i,8*(j-1)+1:8*j)=idct2(p_qua3(8*(i-1)+1:8*i,8*(j-1)+1:8*j).*QQQ);
+        j=j+1;
+    end
+    i=i+1;
+end
+
+ 
+figure(13);
+imshow(uint8(o_idct3));
+figure(14);
+imshow(uint8(i_idct3));
+figure(15);
+imshow(uint8(p_idct3));
+
+
+
+
+
+
+
+
+
+
+
+
+% zigzag scan
+% for method 1
+k=1;
+for i=1:128
+    for j=1:128
+        o_zigzag1(k,:)=zscan(o_qua1(8*(i-1)+1:8*i,8*(j-1)+1:8*j));
+        k=k+1;
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+k=1;
+for i=1:128
+    for j=1:128
+        i_zigzag1(k,:)=zscan(i_qua1(8*(i-1)+1:8*i,8*(j-1)+1:8*j));
+        k=k+1;
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+k=1;
+for i=1:128
+    for j=1:128
+        p_zigzag1(k,:)=zscan(p_qua1(8*(i-1)+1:8*i,8*(j-1)+1:8*j));
+        k=k+1;
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+% method 2
+k=1;
+for i=1:128
+    for j=1:128
+        o_zigzag2(k,:)=zscan(o_qua2(8*(i-1)+1:8*i,8*(j-1)+1:8*j));
+        k=k+1;
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+k=1;
+for i=1:128
+    for j=1:128
+        i_zigzag2(k,:)=zscan(i_qua2(8*(i-1)+1:8*i,8*(j-1)+1:8*j));
+        k=k+1;
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+k=1;
+for i=1:128
+    for j=1:128
+        p_zigzag2(k,:)=zscan(p_qua2(8*(i-1)+1:8*i,8*(j-1)+1:8*j));
+        k=k+1;
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+
+
+
+
+
+
+% method 3
+k=1;
+for i=1:128
+    for j=1:128
+        o_zigzag3(k,:)=zscan(o_qua3(8*(i-1)+1:8*i,8*(j-1)+1:8*j));
+        k=k+1;
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+k=1;
+for i=1:128
+    for j=1:128
+        i_zigzag3(k,:)=zscan(i_qua3(8*(i-1)+1:8*i,8*(j-1)+1:8*j));
+        k=k+1;
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+k=1;
+for i=1:128
+    for j=1:128
+        p_zigzag3(k,:)=zscan(p_qua3(8*(i-1)+1:8*i,8*(j-1)+1:8*j));
+        k=k+1;
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+
+
+
+
+
+% RLC
+% for method 1
+o_RLC1=zeros(16384,128);
+o_RLC1(1,1)=o_zigzag1(1,1);
+for i=2:16384
+    o_RLC1(i,1)=o_zigzag1(i-1,1)-o_zigzag1(i,1);
+    i=i+1;
+end
+
+for i=1:16384
+    o_RLC1(i,128)=char(1010);
+    i=i+1;
+end
+
+
+for i=1:16384
+    for j=2:64
+        if o_zigzag1(i,j)~=0
+            if o_zigzag1(i,j-1)~=0
+                o_RLC1(i,2*(j-1))=0;
+                o_RLC1(i,2*(j-1)+1)=o_zigzag1(i,j);
+            else
+                c=countzero(o_zigzag1(i,:),j);
+                o_RLC1(i,2*(j-1))=c;
+                o_RLC1(i,2*(j-1)+1)=o_zigzag1(i,j);
+            end
+        end
+        if o_zigzag1(i,j)==0
+            o_RLC1(i,2*(j-1))=pi;
+            o_RLC1(i,2*(j-1)+1)=pi;
+        end
+    end
+end
+
+
+o_rlc1=zeros(16384,128);
+for i=1:16384
+    o_rlc1(i,1)=o_RLC1(i,1);
+    i=i+1;
+end             
+
+
+for i=1:16384
+    k=2;
+    for j=2:128
+        if o_RLC1(i,j)~=pi
+            o_rlc1(i,k)=o_RLC1(i,j);
+            k=k+1;
+            j=j+1;
+        else
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+
+
+
+i_RLC1=zeros(16384,128);
+i_RLC1(1,1)=i_zigzag1(1,1);
+for i=2:16384
+    i_RLC1(i,1)=i_zigzag1(i-1,1)-i_zigzag1(i,1);
+    i=i+1;
+end
+
+for i=1:16384
+    i_RLC1(i,128)=char(1010);
+    i=i+1;
+end
+
+
+for i=1:16384
+    for j=2:64
+        if i_zigzag1(i,j)~=0
+            if i_zigzag1(i,j-1)~=0
+                i_RLC1(i,2*(j-1))=0;
+                i_RLC1(i,2*(j-1)+1)=i_zigzag1(i,j);
+            else
+                c=countzero(i_zigzag1(i,:),j);
+                i_RLC1(i,2*(j-1))=c;
+                i_RLC1(i,2*(j-1)+1)=i_zigzag1(i,j);
+            end
+        end
+        if i_zigzag1(i,j)==0
+            i_RLC1(i,2*(j-1))=pi;
+            i_RLC1(i,2*(j-1)+1)=pi;
+        end
+    end
+end
+
+
+i_rlc1=zeros(16384,128);
+for i=1:16384
+    i_rlc1(i,1)=i_RLC1(i,1);
+    i=i+1;
+end             
+
+
+for i=1:16384
+    k=2;
+    for j=2:128
+        if i_RLC1(i,j)~=pi
+            i_rlc1(i,k)=i_RLC1(i,j);
+            k=k+1;
+            j=j+1;
+        else
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+
+
+
+p_RLC1=zeros(16384,128);
+p_RLC1(1,1)=p_zigzag1(1,1);
+for i=2:16384
+    p_RLC1(i,1)=p_zigzag1(i-1,1)-p_zigzag1(i,1);
+    i=i+1;
+end
+
+for i=1:16384
+    p_RLC1(i,128)=char(1010);
+    i=i+1;
+end
+
+
+for i=1:16384
+    for j=2:64
+        if p_zigzag1(i,j)~=0
+            if p_zigzag1(i,j-1)~=0
+                p_RLC1(i,2*(j-1))=0;
+                p_RLC1(i,2*(j-1)+1)=p_zigzag1(i,j);
+            else
+                c=countzero(p_zigzag1(i,:),j);
+                p_RLC1(i,2*(j-1))=c;
+                p_RLC1(i,2*(j-1)+1)=p_zigzag1(i,j);
+            end
+        end
+        if p_zigzag1(i,j)==0
+            p_RLC1(i,2*(j-1))=pi;
+            p_RLC1(i,2*(j-1)+1)=pi;
+        end
+    end
+end
+
+
+p_rlc1=zeros(16384,128);
+for i=1:16384
+    p_rlc1(i,1)=p_RLC1(i,1);
+    i=i+1;
+end             
+
+
+for i=1:16384
+    k=2;
+    for j=2:128
+        if p_RLC1(i,j)~=pi
+            p_rlc1(i,k)=p_RLC1(i,j);
+            k=k+1;
+            j=j+1;
+        else
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+
+% method 2
+o_RLC2=zeros(16384,128);
+o_RLC2(1,1)=o_zigzag2(1,1);
+for i=2:16384
+    o_RLC2(i,1)=o_zigzag2(i-1,1)-o_zigzag2(i,1);
+    i=i+1;
+end
+
+for i=1:16384
+    o_RLC2(i,128)=char(1010);
+    i=i+1;
+end
+
+
+for i=1:16384
+    for j=2:64
+        if o_zigzag2(i,j)~=0
+            if o_zigzag2(i,j-1)~=0
+                o_RLC2(i,2*(j-1))=0;
+                o_RLC2(i,2*(j-1)+1)=o_zigzag2(i,j);
+            else
+                c=countzero(o_zigzag2(i,:),j);
+                o_RLC2(i,2*(j-1))=c;
+                o_RLC2(i,2*(j-1)+1)=o_zigzag2(i,j);
+            end
+        end
+        if o_zigzag2(i,j)==0
+            o_RLC2(i,2*(j-1))=pi;
+            o_RLC2(i,2*(j-1)+1)=pi;
+        end
+    end
+end
+
+
+o_rlc2=zeros(16384,128);
+for i=1:16384
+    o_rlc2(i,1)=o_RLC2(i,1);
+    i=i+1;
+end             
+
+
+for i=1:16384
+    k=2;
+    for j=2:128
+        if o_RLC2(i,j)~=pi
+            o_rlc2(i,k)=o_RLC2(i,j);
+            k=k+1;
+            j=j+1;
+        else
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+i_RLC2=zeros(16384,128);
+i_RLC2(1,1)=i_zigzag2(1,1);
+for i=2:16384
+    i_RLC2(i,1)=i_zigzag2(i-1,1)-i_zigzag2(i,1);
+    i=i+1;
+end
+
+for i=1:16384
+    i_RLC2(i,128)=char(1010);
+    i=i+1;
+end
+
+
+for i=1:16384
+    for j=2:64
+        if i_zigzag2(i,j)~=0
+            if i_zigzag2(i,j-1)~=0
+                i_RLC2(i,2*(j-1))=0;
+                i_RLC2(i,2*(j-1)+1)=i_zigzag2(i,j);
+            else
+                c=countzero(i_zigzag2(i,:),j);
+                i_RLC2(i,2*(j-1))=c;
+                i_RLC2(i,2*(j-1)+1)=i_zigzag2(i,j);
+            end
+        end
+        if i_zigzag2(i,j)==0
+            i_RLC2(i,2*(j-1))=pi;
+            i_RLC2(i,2*(j-1)+1)=pi;
+        end
+    end
+end
+
+
+i_rlc2=zeros(16384,128);
+for i=1:16384
+    i_rlc2(i,1)=i_RLC2(i,1);
+    i=i+1;
+end             
+
+
+for i=1:16384
+    k=2;
+    for j=2:128
+        if i_RLC2(i,j)~=pi
+            i_rlc2(i,k)=i_RLC2(i,j);
+            k=k+1;
+            j=j+1;
+        else
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+
+
+
+p_RLC2=zeros(16384,128);
+p_RLC2(1,1)=p_zigzag2(1,1);
+for i=2:16384
+    p_RLC2(i,1)=p_zigzag2(i-1,1)-p_zigzag2(i,1);
+    i=i+1;
+end
+
+for i=1:16384
+    p_RLC2(i,128)=char(1010);
+    i=i+1;
+end
+
+
+for i=1:16384
+    for j=2:64
+        if p_zigzag2(i,j)~=0
+            if p_zigzag2(i,j-1)~=0
+                p_RLC2(i,2*(j-1))=0;
+                p_RLC2(i,2*(j-1)+1)=p_zigzag2(i,j);
+            else
+                c=countzero(p_zigzag2(i,:),j);
+                p_RLC2(i,2*(j-1))=c;
+                p_RLC2(i,2*(j-1)+1)=p_zigzag2(i,j);
+            end
+        end
+        if p_zigzag2(i,j)==0
+            p_RLC2(i,2*(j-1))=pi;
+            p_RLC2(i,2*(j-1)+1)=pi;
+        end
+    end
+end
+
+
+p_rlc2=zeros(16384,128);
+for i=1:16384
+    p_rlc2(i,1)=p_RLC2(i,1);
+    i=i+1;
+end             
+
+
+for i=1:16384
+    k=2;
+    for j=2:128
+        if p_RLC2(i,j)~=pi
+            p_rlc2(i,k)=p_RLC2(i,j);
+            k=k+1;
+            j=j+1;
+        else
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% method 3
+o_RLC3=zeros(16384,128);
+o_RLC3(1,1)=o_zigzag3(1,1);
+for i=2:16384
+    o_RLC3(i,1)=o_zigzag3(i-1,1)-o_zigzag3(i,1);
+    i=i+1;
+end
+
+for i=1:16384
+    o_RLC3(i,128)=char(1010);
+    i=i+1;
+end
+
+
+for i=1:16384
+    for j=2:64
+        if o_zigzag3(i,j)~=0
+            if o_zigzag3(i,j-1)~=0
+                o_RLC3(i,2*(j-1))=0;
+                o_RLC3(i,2*(j-1)+1)=o_zigzag3(i,j);
+            else
+                c=countzero(o_zigzag3(i,:),j);
+                o_RLC3(i,2*(j-1))=c;
+                o_RLC3(i,2*(j-1)+1)=o_zigzag3(i,j);
+            end
+        end
+        if o_zigzag3(i,j)==0
+            o_RLC3(i,2*(j-1))=pi;
+            o_RLC3(i,2*(j-1)+1)=pi;
+        end
+    end
+end
+
+
+o_rlc3=zeros(16384,128);
+for i=1:16384
+    o_rlc3(i,1)=o_RLC3(i,1);
+    i=i+1;
+end             
+
+
+for i=1:16384
+    k=2;
+    for j=2:128
+        if o_RLC3(i,j)~=pi
+            o_rlc3(i,k)=o_RLC3(i,j);
+            k=k+1;
+            j=j+1;
+        else
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+i_RLC3=zeros(16384,128);
+i_RLC3(1,1)=i_zigzag3(1,1);
+for i=2:16384
+    i_RLC3(i,1)=i_zigzag3(i-1,1)-i_zigzag3(i,1);
+    i=i+1;
+end
+
+for i=1:16384
+    i_RLC3(i,128)=char(1010);
+    i=i+1;
+end
+
+
+for i=1:16384
+    for j=2:64
+        if i_zigzag3(i,j)~=0
+            if i_zigzag3(i,j-1)~=0
+                i_RLC3(i,2*(j-1))=0;
+                i_RLC3(i,2*(j-1)+1)=i_zigzag3(i,j);
+            else
+                c=countzero(i_zigzag3(i,:),j);
+                i_RLC3(i,2*(j-1))=c;
+                i_RLC3(i,2*(j-1)+1)=i_zigzag3(i,j);
+            end
+        end
+        if i_zigzag3(i,j)==0
+            i_RLC3(i,2*(j-1))=pi;
+            i_RLC3(i,2*(j-1)+1)=pi;
+        end
+    end
+end
+
+
+i_rlc3=zeros(16384,128);
+for i=1:16384
+    i_rlc3(i,1)=i_RLC3(i,1);
+    i=i+1;
+end             
+
+
+for i=1:16384
+    k=2;
+    for j=2:128
+        if i_RLC3(i,j)~=pi
+            i_rlc3(i,k)=i_RLC3(i,j);
+            k=k+1;
+            j=j+1;
+        else
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+
+
+
+p_RLC3=zeros(16384,128);
+p_RLC3(1,1)=p_zigzag3(1,1);
+for i=2:16384
+    p_RLC3(i,1)=p_zigzag3(i-1,1)-p_zigzag3(i,1);
+    i=i+1;
+end
+
+for i=1:16384
+    p_RLC3(i,128)=char(1010);
+    i=i+1;
+end
+
+
+for i=1:16384
+    for j=2:64
+        if p_zigzag3(i,j)~=0
+            if p_zigzag3(i,j-1)~=0
+                p_RLC3(i,2*(j-1))=0;
+                p_RLC3(i,2*(j-1)+1)=p_zigzag3(i,j);
+            else
+                c=countzero(p_zigzag3(i,:),j);
+                p_RLC3(i,2*(j-1))=c;
+                p_RLC3(i,2*(j-1)+1)=p_zigzag3(i,j);
+            end
+        end
+        if p_zigzag3(i,j)==0
+            p_RLC3(i,2*(j-1))=pi;
+            p_RLC3(i,2*(j-1)+1)=pi;
+        end
+    end
+end
+
+
+p_rlc=zeros(16384,128);
+for i=1:16384
+    p_rlc3(i,1)=p_RLC3(i,1);
+    i=i+1;
+end             
+
+
+for i=1:16384
+    k=2;
+    for j=2:128
+        if p_RLC3(i,j)~=pi
+            p_rlc3(i,k)=p_RLC3(i,j);
+            k=k+1;
+            j=j+1;
+        else
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% huffman encoding
+
+% table
+table;
+
+% method 1
+
+
+for i=1:16384
+    for j=1:32
+        o_huf1{i,j}=0;
+    end
+end
+
+
+ 
+for i=1:16384
+    c=findDCcategory(o_rlc1(i,1));
+    o_huf1{i,1}=findDChuf(c,o_rlc1(i,1));
+    i=i+1;
+end
+
+
+    
+for i=1:16384
+    for j=1:31
+        if o_rlc1(i,2*j)==1010
+            o_huf1{i,j+1}=char('1010');
+            break;
+        else
+            c=findACcatergory(o_rlc1(i,2*j+1));
+            if o_rlc1(i,2*j)>15
+                o_rlc1(i,2*j)=15;
+            end
+            o_huf1{i,j+1}=findAChuf(o_rlc1(i,2*j),c,o_rlc1(i,2*j+1));
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+  
+
+
+% % % % % % % % % % % 
+for i=1:16384
+    for j=1:32
+        i_huf1{i,j}=0;
+    end
+end
+
+
+ 
+for i=1:16384
+    c=findDCcategory(i_rlc1(i,1));
+    i_huf1{i,1}=findDChuf(c,i_rlc1(i,1));
+    i=i+1;
+end
+
+
+    
+for i=1:16384
+    for j=1:31
+        if i_rlc1(i,2*j)==1010
+            i_huf1{i,j+1}=char('1010');
+            break;
+        else
+            c=findACcatergory(i_rlc1(i,2*j+1));
+            if i_rlc1(i,2*j)>15
+                i_rlc1(i,2*j)=15;
+            end
+            i_huf1{i,j+1}=findAChuf(i_rlc1(i,2*j),c,i_rlc1(i,2*j+1));
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+% % % % % % % % % % % % % 
+for i=1:16384
+    for j=1:32
+        p_huf1{i,j}=0;
+    end
+end
+
+
+ 
+for i=1:16384
+    c=findDCcategory(p_rlc1(i,1));
+    p_huf1{i,1}=findDChuf(c,p_rlc1(i,1));
+    i=i+1;
+end
+
+
+    
+for i=1:16384
+    for j=1:31
+        if p_rlc1(i,2*j)==1010
+            p_huf1{i,j+1}=char('1010');
+            break;
+        else
+            c=findACcatergory(p_rlc1(i,2*j+1));
+            if p_rlc1(i,2*j)>15
+                p_rlc1(i,2*j)=15;
+            end
+            p_huf1{i,j+1}=findAChuf(p_rlc1(i,2*j),c,p_rlc1(i,2*j+1));
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+
+% method 2
+for i=1:16384
+    for j=1:18
+        o_huf2{i,j}=0;
+    end
+end
+
+
+ 
+for i=1:16384
+    c=findDCcategory(o_rlc2(i,1));
+    o_huf2{i,1}=findDChuf(c,o_rlc2(i,1));
+    i=i+1;
+end
+
+
+    
+for i=1:16384
+    for j=1:17
+        if o_rlc2(i,2*j)==1010
+            o_huf2{i,j+1}=char('1010');
+            break;
+        else
+            c=findACcatergory(o_rlc2(i,2*j+1));
+            if o_rlc2(i,2*j)>15
+                o_rlc2(i,2*j)=15;
+            end
+            o_huf2{i,j+1}=findAChuf(o_rlc2(i,2*j),c,o_rlc2(i,2*j+1));
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+  
+
+
+% % % % % % % % % % % 
+for i=1:16384
+    for j=1:18
+        i_huf2{i,j}=0;
+    end
+end
+
+
+ 
+for i=1:16384
+    c=findDCcategory(i_rlc2(i,1));
+    i_huf2{i,1}=findDChuf(c,i_rlc2(i,1));
+    i=i+1;
+end
+
+
+    
+for i=1:16384
+    for j=1:17
+        if i_rlc2(i,2*j)==1010
+            i_huf2{i,j+1}=char('1010');
+            break;
+        else
+            c=findACcatergory(i_rlc2(i,2*j+1));
+            if i_rlc2(i,2*j)>15
+                i_rlc2(i,2*j)=15;
+            end
+            i_huf2{i,j+1}=findAChuf(i_rlc2(i,2*j),c,i_rlc2(i,2*j+1));
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+% % % % % % % % % % % % % 
+for i=1:16384
+    for j=1:18
+        p_huf2{i,j}=0;
+    end
+end
+
+
+ 
+for i=1:16384
+    c=findDCcategory(p_rlc2(i,1));
+    p_huf2{i,1}=findDChuf(c,p_rlc2(i,1));
+    i=i+1;
+end
+
+
+    
+for i=1:16384
+    for j=1:17
+        if p_rlc2(i,2*j)==1010
+            p_huf2{i,j+1}=char('1010');
+            break;
+        else
+            c=findACcatergory(p_rlc2(i,2*j+1));
+            if p_rlc2(i,2*j)>15
+                p_rlc2(i,2*j)=15;
+            end
+            p_huf2{i,j+1}=findAChuf(p_rlc2(i,2*j),c,p_rlc2(i,2*j+1));
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+
+
+
+
+
+% method 3
+for i=1:16384
+    for j=1:13
+        o_huf3{i,j}=0;
+    end
+end
+
+
+ 
+for i=1:16384
+    c=findDCcategory(o_rlc3(i,1));
+    o_huf3{i,1}=findDChuf(c,o_rlc3(i,1));
+    i=i+1;
+end
+
+
+    
+for i=1:16384
+    for j=1:12
+        if o_rlc3(i,2*j)==1010
+            o_huf3{i,j+1}=char('1010');
+            break;
+        else
+            c=findACcatergory(o_rlc3(i,2*j+1));
+            if o_rlc3(i,2*j)>15
+                o_rlc3(i,2*j)=15;
+            end
+            o_huf3{i,j+1}=findAChuf(o_rlc3(i,2*j),c,o_rlc3(i,2*j+1));
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+  
+
+
+% % % % % % % % % % % 
+for i=1:16384
+    for j=1:13
+        i_huf3{i,j}=0;
+    end
+end
+
+
+ 
+for i=1:16384
+    c=findDCcategory(i_rlc3(i,1));
+    i_huf3{i,1}=findDChuf(c,i_rlc3(i,1));
+    i=i+1;
+end
+
+
+    
+for i=1:16384
+    for j=1:12
+        if i_rlc3(i,2*j)==1010
+            i_huf3{i,j+1}=char('1010');
+            break;
+        else
+            c=findACcatergory(i_rlc3(i,2*j+1));
+            if i_rlc3(i,2*j)>15
+                i_rlc3(i,2*j)=15;
+            end
+            i_huf3{i,j+1}=findAChuf(i_rlc3(i,2*j),c,i_rlc3(i,2*j+1));
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+
+
+% % % % % % % % % % % % % 
+for i=1:16384
+    for j=1:13
+        p_huf3{i,j}=0;
+    end
+end
+
+
+ 
+for i=1:16384
+    c=findDCcategory(p_rlc3(i,1));
+    p_huf3{i,1}=findDChuf(c,p_rlc3(i,1));
+    i=i+1;
+end
+
+
+    
+for i=1:16384
+    for j=1:12
+        if p_rlc3(i,2*j)==1010
+            p_huf3{i,j+1}=char('1010');
+            break;
+        else
+            c=findACcatergory(p_rlc3(i,2*j+1));
+            if p_rlc3(i,2*j)>15
+                p_rlc3(i,2*j)=15;
+            end
+            p_huf3{i,j+1}=findAChuf(p_rlc3(i,2*j),c,p_rlc3(i,2*j+1));
+            j=j+1;
+        end
+    end
+    i=i+1;
+end
+
+
+
+% total bit
+o_bit=0;
+for i=1:1024
+    for j=1:1024
+        if o_sub(i,j)<100
+            o_bit=o_bit+2;
+        else
+            o_bit=o_bit+3;
+        end
+    end
+end
+
+
+i_bit=0;
+for i=1:1024
+    for j=1:1024
+        if i_sub(i,j)<100
+            i_bit=i_bit+2;
+        else
+            i_bit=i_bit+3;
+        end
+    end
+end
+
+p_bit=0;
+for i=1:1024
+    for j=1:1024
+        if p_sub(i,j)<100
+            p_bit=p_bit+2;
+        else
+            p_bit=p_bit+3;
+        end
+    end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+% method 1
+o_compressedbit1=0;
+for i=1:16384
+    for j=1:32
+        if strcmp(o_huf1{i,j},'1010')==1
+            o_compressedbit1=o_compressedbit1+4;
+            break;
+        else
+            o_compressedbit1=o_compressedbit1+length(o_huf1{i,j});
+        end
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+i_compressedbit1=0;
+for i=1:16384
+    for j=1:32
+        if strcmp(i_huf1{i,j},'1010')==1
+            i_compressedbit1=i_compressedbit1+4;
+            break;
+        else
+            i_compressedbit1=i_compressedbit1+length(i_huf1{i,j});
+        end
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+
+p_compressedbit1=0;
+for i=1:16384
+    for j=1:32
+        if strcmp(p_huf1{i,j},'1010')==1
+            p_compressedbit1=p_compressedbit1+4;
+            break;
+        else
+            p_compressedbit1=p_compressedbit1+length(p_huf1{i,j});
+        end
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+
+o_ratio1=o_compressedbit1/o_bit;
+i_ratio1=i_compressedbit1/i_bit;
+p_ratio1=p_compressedbit1/p_bit;
+
+
+
+
+
+%method 2
+o_compressedbit2=0;
+for i=1:16384
+    for j=1:64
+        if strcmp(o_huf2{i,j},'1010')==1
+            o_compressedbit2=o_compressedbit2+4;
+            break;
+        else
+            o_compressedbit2=o_compressedbit2+length(o_huf2{i,j});
+        end
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+i_compressedbit2=0;
+for i=1:16384
+    for j=1:64
+        if strcmp(i_huf2{i,j},'1010')==1
+            i_compressedbit2=i_compressedbit2+4;
+            break;
+        else
+            i_compressedbit2=i_compressedbit2+length(i_huf2{i,j});
+        end
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+
+p_compressedbit2=0;
+for i=1:16384
+    for j=1:64
+        if strcmp(p_huf2{i,j},'1010')==1
+            p_compressedbit2=p_compressedbit2+4;
+            break;
+        else
+            p_compressedbit2=p_compressedbit2+length(p_huf2{i,j});
+        end
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+
+o_ratio2=o_compressedbit2/o_bit;
+i_ratio2=i_compressedbit2/i_bit;
+p_ratio2=p_compressedbit2/p_bit;
+
+
+
+
+
+% method 3
+o_compressedbit3=0;
+for i=1:16384
+    for j=1:64
+        if strcmp(o_huf3{i,j},'1010')==1
+            o_compressedbit3=o_compressedbit3+4;
+            break;
+        else
+            o_compressedbit3=o_compressedbit3+length(o_huf3{i,j});
+        end
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+i_compressedbit3=0;
+for i=1:16384
+    for j=1:64
+        if strcmp(i_huf3{i,j},'1010')==1
+            i_compressedbit3=i_compressedbit3+4;
+            break;
+        else
+            i_compressedbit3=i_compressedbit3+length(i_huf3{i,j});
+        end
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+
+p_compressedbit3=0;
+for i=1:16384
+    for j=1:64
+        if strcmp(p_huf3{i,j},'1010')==1
+            p_compressedbit3=p_compressedbit3+4;
+            break;
+        else
+            p_compressedbit3=p_compressedbit3+length(p_huf3{i,j});
+        end
+        j=j+1;
+    end
+    i=i+1;
+end
+
+
+
+o_ratio3=o_compressedbit3/o_bit;
+i_ratio3=i_compressedbit3/i_bit;
+p_ratio3=p_compressedbit3/p_bit;
+
+
+
