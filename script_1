@@ -1,5 +1,3 @@
-```javascript
-
 % (a) Image Preparation:
 % load images
 outdoor=imread('outdoor.JPG');
@@ -1528,4 +1526,3 @@ p_ratio3=p_compressedbit3/p_bit;
 
 
 
-```
